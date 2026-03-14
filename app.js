@@ -25,6 +25,12 @@ class Variation1iPad {
     }
     
     init() {
+        // デバッグ表示エリアを作成
+        this.debugEl = document.createElement('div');
+        this.debugEl.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); color: white; padding: 10px; font-size: 12px; z-index: 9999; max-height: 150px; overflow-y: auto;';
+        document.body.appendChild(this.debugEl);
+        this.debug('初期化完了');
+        
         // タッチイベント
         this.touchArea.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
         this.touchArea.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
@@ -37,8 +43,16 @@ class Variation1iPad {
         console.log('iPad版 Variation 1 初期化完了');
     }
     
+    debug(message) {
+        const time = new Date().toLocaleTimeString();
+        console.log(message);
+        this.debugEl.innerHTML = `[${time}] ${message}<br>` + this.debugEl.innerHTML;
+    }
+    
     handleTouchStart(event) {
         event.preventDefault();
+        
+        this.debug(`touchstart: ${event.touches.length}本のタッチ`);
         
         const rect = this.touchArea.getBoundingClientRect();
         
@@ -49,10 +63,13 @@ class Variation1iPad {
             this.activeTouches.set(touch.identifier, { x, y, id: touch.identifier });
         }
         
+        this.debug(`現在のタッチ数: ${this.activeTouches.size}`);
+        
         this.updateDisplay();
         
         // 4本指検出
         if (this.activeTouches.size === 4 && this.state.phase === 'waiting') {
+            this.debug('4本指検出！');
             this.detectFourFingers();
         }
     }
