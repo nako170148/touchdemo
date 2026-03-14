@@ -21,6 +21,10 @@ class Variation1iPad {
         
         this.FINGER_NAMES = ['人差し指', '中指', '薬指', '小指'];
         
+        console.log('activeTouches初期化:', this.activeTouches);
+        console.log('activeTouchesのタイプ:', typeof this.activeTouches);
+        console.log('setメソッドが存在:', typeof this.activeTouches.set);
+        
         this.init();
     }
     
