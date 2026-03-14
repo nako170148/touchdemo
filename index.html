@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Variation 1: タッチ開始時の指識別</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .touch-area {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .instruction {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            padding: 15px;
+            background: #e8f4f8;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            z-index: 10;
+        }
+
+        .instruction.detected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .instruction.gesture {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .touch-point {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.6));
+            border: 3px solid white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            pointer-events: none;
+        }
+
+        .touch-point.identified {
+            background: radial-gradient(circle, rgba(76, 175, 80, 0.8), rgba(56, 142, 60, 0.6));
+        }
+
+        .touch-point.removed {
+            background: radial-gradient(circle, rgba(244, 67, 54, 0.3), rgba(211, 47, 47, 0.2));
+            opacity: 0.4;
+        }
+
+        .info-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .status {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 10px;
+        }
+
+        .status-item {
+            text-align: center;
+        }
+
+        .status-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .status-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .gesture-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            min-height: 50px;
+        }
+
+        .gesture-id {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .gesture-desc {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Variation 1: タッチ開始時の指識別</h1>
+            <p class="subtitle">4本指タッチから特定の指を残して操作</p>
+        </header>
+
+        <div class="touch-area" id="touchArea">
+            <div class="instruction" id="instruction">
+                4本指（人差し指、中指、薬指、小指）を同時にタッチしてください
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="status">
+                <div class="status-item">
+                    <div class="status-label">タッチ数</div>
+                    <div class="status-value" id="touchCount">0</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">モード</div>
+                    <div class="status-value" id="mode">待機中</div>
+                </div>
+            </div>
+            <div class="gesture-info" id="gestureInfo">
+                <div class="gesture-id">-</div>
+            </div>
+            <div class="controls">
+                <button class="btn" id="resetBtn">リセット</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
