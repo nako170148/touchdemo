@@ -12,10 +12,10 @@ class Variation1iPad {
         this.gestureInfoEl = document.getElementById('gestureInfo');
         this.resetBtn = document.getElementById('resetBtn');
         
+        this.activeTouches = new Map();
         this.state = {
             phase: 'waiting',
             initialFingers: null,
-            activeTouches: new Map(),
             activeGesture: null
         };
         
@@ -322,10 +322,10 @@ class Variation1iPad {
     }
     
     reset() {
+        this.activeTouches.clear();
         this.state = {
             phase: 'waiting',
             initialFingers: null,
-            activeTouches: new Map(),
             activeGesture: null
         };
         
