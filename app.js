@@ -170,7 +170,7 @@ class Variation1iPad {
                         <div class="gesture-desc">使用する指: ${gesture.fingerNames.join(', ')}</div>
                     `;
                     
-                    this.debug(`✅ ${gesture.id}: ${gesture.description}`);
+                    this.debug(`${gesture.id}: ${gesture.description}`);
                     console.log('ジェスチャ検出:', gesture);
                 }
             }
@@ -272,15 +272,9 @@ class Variation1iPad {
             point.style.left = touch.x + 'px';
             point.style.top = touch.y + 'px';
             
-            // 識別済みの指の場合
+            // 識別済みの指の場合（タッチIDで判定）
             if (this.state.initialFingers) {
-                const identified = this.state.initialFingers.find(f => {
-                    const dist = Math.sqrt(
-                        Math.pow(touch.x - f.x, 2) + 
-                        Math.pow(touch.y - f.y, 2)
-                    );
-                    return dist < 100;
-                });
+                const identified = this.state.initialFingers.find(f => f.touchId === touch.id);
                 
                 if (identified) {
                     point.classList.add('identified');
@@ -298,13 +292,8 @@ class Variation1iPad {
         // 離された指を表示（半透明）
         if (this.state.initialFingers && this.state.phase !== 'waiting') {
             for (let finger of this.state.initialFingers) {
-                const stillTouching = Array.from(this.activeTouches.values()).some(t => {
-                    const dist = Math.sqrt(
-                        Math.pow(t.x - finger.x, 2) + 
-                        Math.pow(t.y - finger.y, 2)
-                    );
-                    return dist < 100;
-                });
+                // タッチIDで判定（位置ではなく）
+                const stillTouching = Array.from(this.activeTouches.values()).some(t => t.id === finger.touchId);
                 
                 if (!stillTouching) {
                     const point = document.createElement('div');
