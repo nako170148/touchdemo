@@ -167,6 +167,7 @@ class Variation1iPad {
                         <div class="gesture-desc">使用する指: ${gesture.fingerNames.join(', ')}</div>
                     `;
                     
+                    this.debug(`✅ ${gesture.id}: ${gesture.description}`);
                     console.log('ジェスチャ検出:', gesture);
                 }
             }
