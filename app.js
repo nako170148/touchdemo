@@ -180,6 +180,9 @@ class Variation1iPad {
     identifyRemainingFingers(currentTouches) {
         const remaining = [];
         
+        this.debug(`現在のタッチ: ${currentTouches.map(t => `ID:${t.id}`).join(', ')}`);
+        this.debug(`初期指: ${this.state.initialFingers.map(f => `${f.name}(ID:${f.touchId})`).join(', ')}`);
+        
         // タッチIDで指を特定（位置ではなくIDで追跡）
         for (let touch of currentTouches) {
             const matchedFinger = this.state.initialFingers.find(f => f.touchId === touch.id);
@@ -192,6 +195,9 @@ class Variation1iPad {
                     finger: matchedFinger.finger,
                     name: matchedFinger.name
                 });
+                this.debug(`マッチ: タッチID ${touch.id} → ${matchedFinger.name}`);
+            } else {
+                this.debug(`マッチなし: タッチID ${touch.id}`);
             }
         }
         
