@@ -124,9 +124,11 @@ class Variation1iPad {
         // x座標でソート
         const sorted = touches.sort((a, b) => a.x - b.x);
         
-        // 指を識別
+        // 指を識別（タッチIDと指の対応を記録）
         this.state.initialFingers = sorted.map((touch, i) => ({
-            ...touch,
+            touchId: touch.id,  // タッチIDを保存
+            x: touch.x,
+            y: touch.y,
             finger: i,
             name: this.FINGER_NAMES[i]
         }));
@@ -137,7 +139,8 @@ class Variation1iPad {
         this.instruction.className = 'instruction detected';
         this.modeEl.textContent = '4本指検出';
         
-        console.log('4本指検出:', this.state.initialFingers.map(f => f.name));
+        this.debug('4本指検出: ' + this.state.initialFingers.map(f => f.name).join(', '));
+        console.log('4本指検出:', this.state.initialFingers.map(f => `${f.name}(ID:${f.touchId})`));
     }
     
     detectGesture() {
@@ -176,29 +179,18 @@ class Variation1iPad {
     
     identifyRemainingFingers(currentTouches) {
         const remaining = [];
-        const threshold = 100;
         
+        // タッチIDで指を特定（位置ではなくIDで追跡）
         for (let touch of currentTouches) {
-            let minDist = Infinity;
-            let closest = null;
+            const matchedFinger = this.state.initialFingers.find(f => f.touchId === touch.id);
             
-            for (let finger of this.state.initialFingers) {
-                const dist = Math.sqrt(
-                    Math.pow(touch.x - finger.x, 2) + 
-                    Math.pow(touch.y - finger.y, 2)
-                );
-                
-                if (dist < minDist && dist < threshold) {
-                    minDist = dist;
-                    closest = finger;
-                }
-            }
-            
-            if (closest) {
+            if (matchedFinger) {
                 remaining.push({
-                    ...touch,
-                    finger: closest.finger,
-                    name: closest.name
+                    x: touch.x,
+                    y: touch.y,
+                    id: touch.id,
+                    finger: matchedFinger.finger,
+                    name: matchedFinger.name
                 });
             }
         }
