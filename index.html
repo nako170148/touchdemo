@@ -188,12 +188,16 @@
 
         <div class="touch-area" id="touchArea">
             <div class="instruction" id="instruction">
-                4本指（人差し指、中指、薬指、小指）を同時にタッチしてください
+                使用する手を選択してください
             </div>
         </div>
 
         <div class="info-panel">
-            <div class="status">
+            <div class="hand-selection" id="handSelection">
+                <button class="btn" id="leftHandBtn" style="flex: 1; margin-right: 10px;">左手</button>
+                <button class="btn" id="rightHandBtn" style="flex: 1;">右手</button>
+            </div>
+            <div class="status" id="statusPanel" style="display: none;">
                 <div class="status-item">
                     <div class="status-label">タッチ数</div>
                     <div class="status-value" id="touchCount">0</div>
@@ -202,11 +206,15 @@
                     <div class="status-label">モード</div>
                     <div class="status-value" id="mode">待機中</div>
                 </div>
+                <div class="status-item">
+                    <div class="status-label">使用する手</div>
+                    <div class="status-value" id="handType">-</div>
+                </div>
             </div>
-            <div class="gesture-info" id="gestureInfo">
+            <div class="gesture-info" id="gestureInfo" style="display: none;">
                 <div class="gesture-id">-</div>
             </div>
-            <div class="controls">
+            <div class="controls" id="controlsPanel" style="display: none;">
                 <button class="btn" id="resetBtn">リセット</button>
             </div>
         </div>

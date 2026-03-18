@@ -10,11 +10,18 @@ class Variation1iPad {
         this.touchCountEl = document.getElementById('touchCount');
         this.modeEl = document.getElementById('mode');
         this.gestureInfoEl = document.getElementById('gestureInfo');
+        this.handTypeEl = document.getElementById('handType');
         this.resetBtn = document.getElementById('resetBtn');
+        this.leftHandBtn = document.getElementById('leftHandBtn');
+        this.rightHandBtn = document.getElementById('rightHandBtn');
+        this.handSelection = document.getElementById('handSelection');
+        this.statusPanel = document.getElementById('statusPanel');
+        this.controlsPanel = document.getElementById('controlsPanel');
         
         this.activeTouches = new Map();
+        this.handType = null; // 'left' or 'right'
         this.state = {
-            phase: 'waiting',
+            phase: 'hand_selection',
             initialFingers: null,
             activeGesture: null
         };
@@ -35,6 +42,10 @@ class Variation1iPad {
         document.body.appendChild(this.debugEl);
         this.debug('初期化完了');
         
+        // 左手・右手選択ボタン
+        this.leftHandBtn.addEventListener('click', () => this.selectHand('left'));
+        this.rightHandBtn.addEventListener('click', () => this.selectHand('right'));
+        
         // タッチイベント
         this.touchArea.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
         this.touchArea.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
@@ -45,6 +56,22 @@ class Variation1iPad {
         this.resetBtn.addEventListener('click', this.reset.bind(this));
         
         console.log('iPad版 Variation 1 初期化完了');
+    }
+    
+    selectHand(hand) {
+        this.handType = hand;
+        this.state.phase = 'waiting';
+        
+        // UI切り替え
+        this.handSelection.style.display = 'none';
+        this.statusPanel.style.display = 'flex';
+        this.gestureInfoEl.style.display = 'block';
+        this.controlsPanel.style.display = 'flex';
+        
+        this.handTypeEl.textContent = hand === 'left' ? '左手' : '右手';
+        this.instruction.textContent = '4本指（人差し指、中指、薬指、小指）を同時にタッチしてください';
+        
+        this.debug(`${hand === 'left' ? '左手' : '右手'}を選択しました`);
     }
     
     debug(message) {
@@ -123,6 +150,12 @@ class Variation1iPad {
         
         // x座標でソート
         const sorted = touches.sort((a, b) => a.x - b.x);
+        
+        // 左手の場合は逆順（右から左へ：小指、薬指、中指、人差し指）
+        // 右手の場合は順順（左から右へ：人差し指、中指、薬指、小指）
+        if (this.handType === 'left') {
+            sorted.reverse();
+        }
         
         // 指を識別（タッチIDと指の対応を記録）
         this.state.initialFingers = sorted.map((touch, i) => ({
@@ -315,15 +348,21 @@ class Variation1iPad {
     
     reset() {
         this.activeTouches.clear();
+        this.handType = null;
         this.state = {
-            phase: 'waiting',
+            phase: 'hand_selection',
             initialFingers: null,
             activeGesture: null
         };
         
-        this.instruction.textContent = '4本指（人差し指、中指、薬指、小指）を同時にタッチしてください';
+        // UI切り替え
+        this.handSelection.style.display = 'flex';
+        this.statusPanel.style.display = 'none';
+        this.gestureInfoEl.style.display = 'none';
+        this.controlsPanel.style.display = 'none';
+        
+        this.instruction.textContent = '使用する手を選択してください';
         this.instruction.className = 'instruction';
-        this.modeEl.textContent = '待機中';
         this.touchCountEl.textContent = '0';
         this.gestureInfoEl.innerHTML = '<div class="gesture-id">-</div>';
         
