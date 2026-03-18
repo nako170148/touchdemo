@@ -137,9 +137,17 @@ class Variation1iPad {
         if (this.activeTouches.size === 0) {
             // すべての指が離れた
             if (this.state.activeGesture) {
+                this.debug(`ジェスチャ完了: ${this.state.activeGesture.id}`);
                 console.log('ジェスチャ完了:', this.state.activeGesture);
             }
-            setTimeout(() => this.reset(), 500);
+            // 待機状態に戻す（リセットボタンは表示したまま）
+            this.state.phase = 'waiting';
+            this.state.initialFingers = null;
+            this.state.activeGesture = null;
+            this.instruction.textContent = '4本指（人差し指、中指、薬指、小指）を同時にタッチしてください';
+            this.instruction.className = 'instruction';
+            this.modeEl.textContent = '待機中';
+            this.gestureInfoEl.innerHTML = '<div class="gesture-id">-</div>';
         } else if (this.state.phase === 'four_finger_detected' || this.state.phase === 'gesture_active') {
             this.detectGesture();
         }
