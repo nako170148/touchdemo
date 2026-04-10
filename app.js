@@ -1,123 +1,71 @@
+import { DebugPanel } from './js/DebugPanel.js';
+import { GestureClassifier } from './js/GestureClassifier.js';
+import { TouchRenderer } from './js/TouchRenderer.js';
+import { TouchHandler } from './js/TouchHandler.js';
+import { UIManager } from './js/UIManager.js';
+
 /**
  * Variation 1 - iPad版
- * 実際のマルチタッチ入力対応
+ * 実際のマルチタッチ入力対応（オーケストレーター）
  */
-
 class Variation1iPad {
     constructor() {
         this.touchArea = document.getElementById('touchArea');
-        this.instruction = document.getElementById('instruction');
-        this.touchCountEl = document.getElementById('touchCount');
-        this.modeEl = document.getElementById('mode');
-        this.gestureInfoEl = document.getElementById('gestureInfo');
-        this.handTypeEl = document.getElementById('handType');
-        this.resetBtn = document.getElementById('resetBtn');
-        this.leftHandBtn = document.getElementById('leftHandBtn');
-        this.rightHandBtn = document.getElementById('rightHandBtn');
-        this.handSelection = document.getElementById('handSelection');
-        this.statusPanel = document.getElementById('statusPanel');
-        this.controlsPanel = document.getElementById('controlsPanel');
         
-        this.activeTouches = new Map();
         this.handType = null; // 'left' or 'right'
-        this.state = {
-            phase: 'hand_selection',
-            initialFingers: null,
-            activeGesture: null
-        };
+        this.state = { phase: 'hand_selection', initialFingers: null, activeGesture: null };
         
         this.FINGER_NAMES = ['人差し指', '中指', '薬指', '小指'];
         
-        console.log('activeTouches初期化:', this.activeTouches);
-        console.log('activeTouchesのタイプ:', typeof this.activeTouches);
-        console.log('setメソッドが存在:', typeof this.activeTouches.set);
+        this.debugPanel = new DebugPanel();
+        this.gestureClassifier = new GestureClassifier(this.FINGER_NAMES);
+        this.touchRenderer = new TouchRenderer(this.touchArea);
+        this.touchHandler = new TouchHandler();
+        this.ui = new UIManager();
         
         this.init();
     }
     
     init() {
-        // デバッグ表示エリアを作成
-        this.debugEl = document.createElement('div');
-        this.debugEl.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); color: white; padding: 10px; font-size: 12px; z-index: 9999; max-height: 150px; overflow-y: auto;';
-        document.body.appendChild(this.debugEl);
         this.debug('初期化完了');
         
-        // 左手・右手選択ボタン
-        this.leftHandBtn.addEventListener('click', () => this.selectHand('left'));
-        this.rightHandBtn.addEventListener('click', () => this.selectHand('right'));
+        document.getElementById('leftHandBtn').addEventListener('click', () => this.selectHand('left'));
+        document.getElementById('rightHandBtn').addEventListener('click', () => this.selectHand('right'));
+        document.getElementById('resetBtn').addEventListener('click', () => this.reset());
         
-        // タッチイベント
-        this.touchArea.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
-        this.touchArea.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
-        this.touchArea.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
-        this.touchArea.addEventListener('touchcancel', this.handleTouchEnd.bind(this), { passive: false });
-        
-        // リセットボタン
-        this.resetBtn.addEventListener('click', this.reset.bind(this));
-        
-        console.log('iPad版 Variation 1 初期化完了');
+        const opts = { passive: false };
+        this.touchArea.addEventListener('touchstart', this.onTouchStart.bind(this), opts);
+        this.touchArea.addEventListener('touchmove', this.onTouchMove.bind(this), opts);
+        this.touchArea.addEventListener('touchend', this.onTouchEnd.bind(this), opts);
+        this.touchArea.addEventListener('touchcancel', this.onTouchEnd.bind(this), opts);
     }
+    
+    debug(msg) { this.debugPanel.log(msg); }
     
     selectHand(hand) {
         this.handType = hand;
         this.state.phase = 'waiting';
-        
-        // UI切り替え
-        this.handSelection.style.display = 'none';
-        this.statusPanel.style.display = 'flex';
-        this.gestureInfoEl.style.display = 'block';
-        this.controlsPanel.style.display = 'flex';
-        
-        this.handTypeEl.textContent = hand === 'left' ? '左手' : '右手';
-        this.instruction.textContent = '4本指（人差し指、中指、薬指、小指）を同時にタッチしてください';
-        
+        this.ui.showWaiting(hand);
         this.debug(`${hand === 'left' ? '左手' : '右手'}を選択しました`);
     }
     
-    debug(message) {
-        const time = new Date().toLocaleTimeString();
-        console.log(message);
-        this.debugEl.innerHTML = `[${time}] ${message}<br>` + this.debugEl.innerHTML;
-    }
-    
-    handleTouchStart(event) {
+    onTouchStart(event) {
         event.preventDefault();
-        
         this.debug(`touchstart: ${event.touches.length}本のタッチ`);
         
-        const rect = this.touchArea.getBoundingClientRect();
-        
-        for (let touch of event.changedTouches) {
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            
-            this.activeTouches.set(touch.identifier, { x, y, id: touch.identifier });
-        }
-        
-        this.debug(`現在のタッチ数: ${this.activeTouches.size}`);
-        
+        this.touchHandler.addTouches(event, this.touchArea.getBoundingClientRect());
+        this.debug(`現在のタッチ数: ${this.touchHandler.size}`);
         this.updateDisplay();
         
-        // 4本指検出
-        if (this.activeTouches.size === 4 && this.state.phase === 'waiting') {
+        if (this.touchHandler.size === 4 && this.state.phase === 'waiting') {
             this.debug('4本指検出！');
             this.detectFourFingers();
         }
     }
     
-    handleTouchMove(event) {
+    onTouchMove(event) {
         event.preventDefault();
-        
-        const rect = this.touchArea.getBoundingClientRect();
-        
-        for (let touch of event.changedTouches) {
-            if (this.activeTouches.has(touch.identifier)) {
-                const x = touch.clientX - rect.left;
-                const y = touch.clientY - rect.top;
-                this.activeTouches.set(touch.identifier, { x, y, id: touch.identifier });
-            }
-        }
-        
+        this.touchHandler.updatePositions(event, this.touchArea.getBoundingClientRect());
         this.updateDisplay();
         
         if (this.state.phase === 'four_finger_detected' || this.state.phase === 'gesture_active') {
@@ -125,257 +73,64 @@ class Variation1iPad {
         }
     }
     
-    handleTouchEnd(event) {
+    onTouchEnd(event) {
         event.preventDefault();
-        
-        for (let touch of event.changedTouches) {
-            this.activeTouches.delete(touch.identifier);
-        }
-        
+        this.touchHandler.removeTouches(event);
         this.updateDisplay();
         
-        if (this.activeTouches.size === 0) {
-            // すべての指が離れた
+        if (this.touchHandler.size === 0) {
             if (this.state.activeGesture) {
                 this.debug(`ジェスチャ完了: ${this.state.activeGesture.id}`);
-                console.log('ジェスチャ完了:', this.state.activeGesture);
             }
-            // 待機状態に戻す（リセットボタンは表示したまま）
-            this.state.phase = 'waiting';
-            this.state.initialFingers = null;
-            this.state.activeGesture = null;
-            this.instruction.textContent = '4本指（人差し指、中指、薬指、小指）を同時にタッチしてください';
-            this.instruction.className = 'instruction';
-            this.modeEl.textContent = '待機中';
-            this.gestureInfoEl.innerHTML = '<div class="gesture-id">-</div>';
+            this.state = { phase: 'waiting', initialFingers: null, activeGesture: null };
+            this.ui.showWaitingAfterRelease();
         } else if (this.state.phase === 'four_finger_detected' || this.state.phase === 'gesture_active') {
             this.detectGesture();
         }
     }
     
     detectFourFingers() {
-        const touches = Array.from(this.activeTouches.values());
-        
-        // x座標でソート
-        const sorted = touches.sort((a, b) => a.x - b.x);
-        
-        // 左手の場合は逆順（右から左へ：小指、薬指、中指、人差し指）
-        // 右手の場合は順順（左から右へ：人差し指、中指、薬指、小指）
-        if (this.handType === 'left') {
-            sorted.reverse();
-        }
-        
-        // 指を識別（タッチIDと指の対応を記録）
-        this.state.initialFingers = sorted.map((touch, i) => ({
-            touchId: touch.id,  // タッチIDを保存
-            x: touch.x,
-            y: touch.y,
-            finger: i,
-            name: this.FINGER_NAMES[i]
-        }));
-        
+        this.state.initialFingers = this.gestureClassifier.detectFourFingers(
+            this.touchHandler.activeTouches, this.handType
+        );
         this.state.phase = 'four_finger_detected';
-        
-        this.instruction.textContent = '4本指を検出しました！特定の指を離してください';
-        this.instruction.className = 'instruction detected';
-        this.modeEl.textContent = '4本指検出';
-        
+        this.ui.showFourFingerDetected();
         this.debug('4本指検出: ' + this.state.initialFingers.map(f => f.name).join(', '));
-        console.log('4本指検出:', this.state.initialFingers.map(f => `${f.name}(ID:${f.touchId})`));
     }
     
     detectGesture() {
         if (!this.state.initialFingers) return;
         
-        const currentTouches = Array.from(this.activeTouches.values());
-        const remaining = this.identifyRemainingFingers(currentTouches);
+        const currentTouches = Array.from(this.touchHandler.activeTouches.values());
+        const remaining = this.gestureClassifier.identifyRemainingFingers(
+            currentTouches, this.state.initialFingers, (m) => this.debug(m)
+        );
         
-        if (remaining && remaining.length > 0 && remaining.length < 4) {
-            const gesture = this.classifyGesture(remaining);
-            
-            if (gesture) {
-                const isNew = !this.state.activeGesture || 
-                             this.state.activeGesture.id !== gesture.id;
-                
-                if (isNew) {
-                    this.state.activeGesture = gesture;
-                    this.state.phase = 'gesture_active';
-                    
-                    this.instruction.textContent = `${gesture.id}: ${gesture.description}`;
-                    this.instruction.className = 'instruction gesture';
-                    this.modeEl.textContent = 'ジェスチャ検出';
-                    
-                    this.gestureInfoEl.innerHTML = `
-                        <div class="gesture-id">${gesture.id}</div>
-                        <div class="gesture-desc">${gesture.description}</div>
-                        <div class="gesture-desc">使用する指: ${gesture.fingerNames.join(', ')}</div>
-                    `;
-                    
-                    this.debug(`${gesture.id}: ${gesture.description}`);
-                    console.log('ジェスチャ検出:', gesture);
-                }
-            }
+        if (!remaining || remaining.length === 0 || remaining.length >= 4) return;
+        
+        const gesture = this.gestureClassifier.classifyGesture(remaining);
+        if (!gesture) return;
+        
+        const isNew = !this.state.activeGesture || this.state.activeGesture.id !== gesture.id;
+        if (isNew) {
+            this.state.activeGesture = gesture;
+            this.state.phase = 'gesture_active';
+            this.ui.showGesture(gesture);
+            this.debug(`${gesture.id}: ${gesture.description}`);
         }
-    }
-    
-    identifyRemainingFingers(currentTouches) {
-        const remaining = [];
-        
-        this.debug(`現在のタッチ: ${currentTouches.map(t => `ID:${t.id}`).join(', ')}`);
-        this.debug(`初期指: ${this.state.initialFingers.map(f => `${f.name}(ID:${f.touchId})`).join(', ')}`);
-        
-        // タッチIDで指を特定（位置ではなくIDで追跡）
-        for (let touch of currentTouches) {
-            const matchedFinger = this.state.initialFingers.find(f => f.touchId === touch.id);
-            
-            if (matchedFinger) {
-                remaining.push({
-                    x: touch.x,
-                    y: touch.y,
-                    id: touch.id,
-                    finger: matchedFinger.finger,
-                    name: matchedFinger.name
-                });
-                this.debug(`マッチ: タッチID ${touch.id} → ${matchedFinger.name}`);
-            } else {
-                this.debug(`マッチなし: タッチID ${touch.id}`);
-            }
-        }
-        
-        return remaining;
-    }
-    
-    classifyGesture(remainingFingers) {
-        const fingerIndices = remainingFingers.map(f => f.finger).sort((a, b) => a - b);
-        const fingerNames = remainingFingers.map(f => f.name);
-        
-        let gestureId = '';
-        let description = '';
-        
-        if (fingerIndices.length === 1) {
-            const finger = fingerIndices[0];
-            gestureId = `V1-1${String.fromCharCode(97 + finger)}`;
-            
-            const modes = [
-                '通常ポインティング/選択モード',
-                'スクロールモード',
-                '描画/ペンモード',
-                '消しゴム/削除モード'
-            ];
-            description = modes[finger];
-            
-        } else if (fingerIndices.length === 2) {
-            const combinations = {
-                '0,1': { id: 'V1-2a', desc: '2本指スクロール' },
-                '0,2': { id: 'V1-2b', desc: 'ピンチズーム' },
-                '0,3': { id: 'V1-2c', desc: '回転操作' },
-                '1,2': { id: 'V1-2d', desc: 'パン操作' },
-                '1,3': { id: 'V1-2e', desc: 'ブラシサイズ調整' },
-                '2,3': { id: 'V1-2f', desc: '不透明度調整' }
-            };
-            
-            const key = fingerIndices.join(',');
-            if (combinations[key]) {
-                gestureId = combinations[key].id;
-                description = combinations[key].desc;
-            }
-            
-        } else if (fingerIndices.length === 3) {
-            const combinations = {
-                '0,1,2': { id: 'V1-3a', desc: '3本指スワイプ（ウィンドウ切替）' },
-                '0,1,3': { id: 'V1-3b', desc: '3本指ドラッグ' },
-                '0,2,3': { id: 'V1-3c', desc: '3本指タップ（特殊機能）' },
-                '1,2,3': { id: 'V1-3d', desc: '3本指ピンチ' }
-            };
-            
-            const key = fingerIndices.join(',');
-            if (combinations[key]) {
-                gestureId = combinations[key].id;
-                description = combinations[key].desc;
-            }
-        }
-        
-        return gestureId ? {
-            id: gestureId,
-            description: description,
-            fingerCount: fingerIndices.length,
-            fingers: fingerIndices,
-            fingerNames: fingerNames
-        } : null;
     }
     
     updateDisplay() {
-        // 既存のタッチポイントをクリア
-        const existingPoints = this.touchArea.querySelectorAll('.touch-point');
-        existingPoints.forEach(p => p.remove());
-        
-        // タッチ数更新
-        this.touchCountEl.textContent = this.activeTouches.size;
-        
-        // タッチポイント表示
-        for (let touch of this.activeTouches.values()) {
-            const point = document.createElement('div');
-            point.className = 'touch-point';
-            point.style.left = touch.x + 'px';
-            point.style.top = touch.y + 'px';
-            
-            // 識別済みの指の場合（タッチIDで判定）
-            if (this.state.initialFingers) {
-                const identified = this.state.initialFingers.find(f => f.touchId === touch.id);
-                
-                if (identified) {
-                    point.classList.add('identified');
-                    point.textContent = identified.name[0];
-                } else {
-                    point.textContent = '●';
-                }
-            } else {
-                point.textContent = '●';
-            }
-            
-            this.touchArea.appendChild(point);
-        }
-        
-        // 離された指を表示（半透明）
-        if (this.state.initialFingers && this.state.phase !== 'waiting') {
-            for (let finger of this.state.initialFingers) {
-                // タッチIDで判定（位置ではなく）
-                const stillTouching = Array.from(this.activeTouches.values()).some(t => t.id === finger.touchId);
-                
-                if (!stillTouching) {
-                    const point = document.createElement('div');
-                    point.className = 'touch-point removed';
-                    point.style.left = finger.x + 'px';
-                    point.style.top = finger.y + 'px';
-                    point.textContent = finger.name[0];
-                    this.touchArea.appendChild(point);
-                }
-            }
-        }
+        this.ui.updateTouchCount(this.touchHandler.size);
+        this.touchRenderer.render(this.touchHandler.activeTouches, this.state);
     }
     
     reset() {
-        this.activeTouches.clear();
+        this.touchHandler.clear();
         this.handType = null;
-        this.state = {
-            phase: 'hand_selection',
-            initialFingers: null,
-            activeGesture: null
-        };
-        
-        // UI切り替え
-        this.handSelection.style.display = 'flex';
-        this.statusPanel.style.display = 'none';
-        this.gestureInfoEl.style.display = 'none';
-        this.controlsPanel.style.display = 'none';
-        
-        this.instruction.textContent = '使用する手を選択してください';
-        this.instruction.className = 'instruction';
-        this.touchCountEl.textContent = '0';
-        this.gestureInfoEl.innerHTML = '<div class="gesture-id">-</div>';
-        
-        const existingPoints = this.touchArea.querySelectorAll('.touch-point');
-        existingPoints.forEach(p => p.remove());
+        this.state = { phase: 'hand_selection', initialFingers: null, activeGesture: null };
+        this.ui.showHandSelection();
+        this.touchRenderer.render(this.touchHandler.activeTouches, this.state);
     }
 }
 
