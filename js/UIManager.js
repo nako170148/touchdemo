@@ -47,6 +47,19 @@ export class UIManager {
         `;
     }
 
+    /** モードがアクティブになった時の表示 */
+    showModeActive(mode) {
+        this.instruction.textContent = `${mode.name}`;
+        this.instruction.className = 'instruction mode-active';
+        this.instruction.style.borderColor = mode.color;
+        this.modeEl.textContent = mode.name;
+
+        this.gestureInfoEl.innerHTML = `
+            <div class="gesture-id" style="color: ${mode.color}">${mode.name}</div>
+            <div class="gesture-desc">指を動かして操作してください</div>
+        `;
+    }
+
     /** すべての指が離れた後、待機状態に戻す */
     showWaitingAfterRelease() {
         this.instruction.textContent = '4本指（人差し指、中指、薬指、小指）を同時にタッチしてください';

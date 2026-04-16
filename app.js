@@ -3,6 +3,7 @@ import { GestureClassifier } from './js/GestureClassifier.js';
 import { TouchRenderer } from './js/TouchRenderer.js';
 import { TouchHandler } from './js/TouchHandler.js';
 import { UIManager } from './js/UIManager.js';
+import { ModeManager } from './js/ModeManager.js';
 
 /**
  * Variation 1 - iPad版
@@ -22,6 +23,7 @@ class Variation1iPad {
         this.touchRenderer = new TouchRenderer(this.touchArea);
         this.touchHandler = new TouchHandler();
         this.ui = new UIManager();
+        this.modeManager = new ModeManager(this.touchArea);
         
         this.init();
     }
@@ -51,6 +53,8 @@ class Variation1iPad {
     
     onTouchStart(event) {
         event.preventDefault();
+        if (this.state.phase === 'hand_selection') return;
+        
         this.debug(`touchstart: ${event.touches.length}本のタッチ`);
         
         this.touchHandler.addTouches(event, this.touchArea.getBoundingClientRect());
@@ -65,23 +69,38 @@ class Variation1iPad {
     
     onTouchMove(event) {
         event.preventDefault();
-        this.touchHandler.updatePositions(event, this.touchArea.getBoundingClientRect());
+        if (this.state.phase === 'hand_selection') return;
+        
+        const rect = this.touchArea.getBoundingClientRect();
+        this.touchHandler.updatePositions(event, rect);
         this.updateDisplay();
         
-        if (this.state.phase === 'four_finger_detected' || this.state.phase === 'gesture_active') {
+        if (this.state.phase === 'mode_active' && this.state.activeGesture) {
+            // モード実行中: アクティブな指の位置を ModeManager に渡す
+            const activeFinger = this.state.initialFingers?.[this.state.activeGesture.fingers[0]];
+            if (activeFinger) {
+                const touch = this.touchHandler.activeTouches.get(activeFinger.touchId);
+                if (touch) {
+                    this.modeManager.onMove(touch.x, touch.y);
+                }
+            }
+        } else if (this.state.phase === 'four_finger_detected' || this.state.phase === 'gesture_active') {
             this.detectGesture();
         }
     }
     
     onTouchEnd(event) {
         event.preventDefault();
+        if (this.state.phase === 'hand_selection') return;
+        
         this.touchHandler.removeTouches(event);
         this.updateDisplay();
         
         if (this.touchHandler.size === 0) {
             if (this.state.activeGesture) {
-                this.debug(`ジェスチャ完了: ${this.state.activeGesture.id}`);
+                this.debug(`モード終了: ${this.state.activeGesture.description}`);
             }
+            this.modeManager.deactivate();
             this.state = { phase: 'waiting', initialFingers: null, activeGesture: null };
             this.ui.showWaitingAfterRelease();
         } else if (this.state.phase === 'four_finger_detected' || this.state.phase === 'gesture_active') {
@@ -114,9 +133,20 @@ class Variation1iPad {
         const isNew = !this.state.activeGesture || this.state.activeGesture.id !== gesture.id;
         if (isNew) {
             this.state.activeGesture = gesture;
-            this.state.phase = 'gesture_active';
-            this.ui.showGesture(gesture);
-            this.debug(`${gesture.id}: ${gesture.description}`);
+            
+            // 1本指の場合はモードを起動
+            if (gesture.fingerCount === 1) {
+                const mode = this.modeManager.activate(gesture.fingers[0]);
+                this.state.phase = 'mode_active';
+                if (mode) {
+                    this.ui.showModeActive(mode);
+                    this.debug(`モード起動: ${mode.name}`);
+                }
+            } else {
+                this.state.phase = 'gesture_active';
+                this.ui.showGesture(gesture);
+                this.debug(`${gesture.id}: ${gesture.description}`);
+            }
         }
     }
     
@@ -127,6 +157,8 @@ class Variation1iPad {
     
     reset() {
         this.touchHandler.clear();
+        this.modeManager.deactivate();
+        this.modeManager.clearCanvas();
         this.handType = null;
         this.state = { phase: 'hand_selection', initialFingers: null, activeGesture: null };
         this.ui.showHandSelection();
