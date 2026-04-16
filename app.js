@@ -1,4 +1,4 @@
-import { DebugPanel } from './js/DebugPanel.js';
+// import { DebugPanel } from './js/DebugPanel.js';
 import { GestureClassifier } from './js/GestureClassifier.js';
 import { TouchRenderer } from './js/TouchRenderer.js';
 import { TouchHandler } from './js/TouchHandler.js';
@@ -17,7 +17,7 @@ class Variation1iPad {
         
         this.FINGER_NAMES = ['人差し指', '中指', '薬指', '小指'];
         
-        this.debugPanel = new DebugPanel();
+        // this.debugPanel = new DebugPanel();
         this.gestureClassifier = new GestureClassifier(this.FINGER_NAMES);
         this.touchRenderer = new TouchRenderer(this.touchArea);
         this.touchHandler = new TouchHandler();
@@ -40,7 +40,7 @@ class Variation1iPad {
         this.touchArea.addEventListener('touchcancel', this.onTouchEnd.bind(this), opts);
     }
     
-    debug(msg) { this.debugPanel.log(msg); }
+    debug(msg) { console.log(msg); }
     
     selectHand(hand) {
         this.handType = hand;
