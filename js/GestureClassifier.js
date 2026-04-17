@@ -86,10 +86,10 @@ export class GestureClassifier {
             gestureId = `V1-1${String.fromCharCode(97 + finger)}`;
 
             const modes = [
-                '通常ポインティング/選択モード',
-                'スクロールモード',
-                '描画/ペンモード',
-                '消しゴム/削除モード'
+                'マーカーモード',
+                '消しゴムモード',
+                'ポインティングモード',
+                'スクロールモード'
             ];
             description = modes[finger];
 
