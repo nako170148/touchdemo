@@ -1,17 +1,13 @@
 /**
  * タッチポイント描画
- * タッチエリア上のタッチポイントの表示・更新を担当
+ * タッチエリア上のタッチポイントの表示・更新
  */
 export class TouchRenderer {
     constructor(touchArea) {
         this.touchArea = touchArea;
     }
 
-    /**
-     * タッチポイントを描画する
-     * @param {Map} activeTouches - アクティブなタッチのMap
-     * @param {Object} state - アプリケーション状態
-     */
+    //タッチポイントを描画する
     render(activeTouches, state) {
         // 既存のタッチポイントをクリア
         const existingPoints = this.touchArea.querySelectorAll('.touch-point');
@@ -24,7 +20,7 @@ export class TouchRenderer {
             point.style.left = touch.x + 'px';
             point.style.top = touch.y + 'px';
 
-            // 識別済みの指の場合（タッチIDで判定）
+            // 識別済みの指の場合←タッチIDで判定
             if (state.initialFingers) {
                 const identified = state.initialFingers.find(f => f.touchId === touch.id);
 
@@ -41,10 +37,10 @@ export class TouchRenderer {
             this.touchArea.appendChild(point);
         }
 
-        // 離された指を表示（半透明）
+        // 離された指を表示
         if (state.initialFingers && state.phase !== 'waiting') {
             for (let finger of state.initialFingers) {
-                // タッチIDで判定（位置ではなく）
+                // タッチIDで判定
                 const stillTouching = Array.from(activeTouches.values()).some(t => t.id === finger.touchId);
 
                 if (!stillTouching) {

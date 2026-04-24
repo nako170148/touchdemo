@@ -55,11 +55,28 @@ class Variation1iPad {
         event.preventDefault();
         if (this.state.phase === 'hand_selection') return;
         
-        this.debug(`touchstart: ${event.touches.length}本のタッチ`);
-        
         this.touchHandler.addTouches(event, this.touchArea.getBoundingClientRect());
-        this.debug(`現在のタッチ数: ${this.touchHandler.size}`);
         this.updateDisplay();
+        
+        // モード記憶中: 1本指で再開、3本指以上で終了
+        if (this.state.phase === 'mode_remembered') {
+            if (this.touchHandler.size === 1) {
+                const touch = Array.from(this.touchHandler.activeTouches.values())[0];
+                this.state.activeTouchId = touch.id;
+                this.state.phase = 'mode_active';
+                this.ui.showModeActive(this.modeManager.activeMode);
+                this.debug(`モード再開: ${this.modeManager.activeMode.name}`);
+            } else if (this.touchHandler.size >= 3) {
+                this.modeManager.deactivate();
+                this.state = { phase: 'waiting', initialFingers: null, activeGesture: null };
+                this.ui.showWaitingAfterRelease();
+                this.debug('3本指タッチでモード終了');
+            }
+            return;
+        }
+        
+        this.debug(`touchstart: ${event.touches.length}本のタッチ`);
+        this.debug(`現在のタッチ数: ${this.touchHandler.size}`);
         
         if (this.touchHandler.size === 4 && this.state.phase === 'waiting') {
             this.debug('4本指検出！');
@@ -75,14 +92,21 @@ class Variation1iPad {
         this.touchHandler.updatePositions(event, rect);
         this.updateDisplay();
         
-        if (this.state.phase === 'mode_active' && this.state.activeGesture) {
+        if (this.state.phase === 'mode_active') {
             // モード実行中: アクティブな指の位置を ModeManager に渡す
-            const activeFinger = this.state.initialFingers?.[this.state.activeGesture.fingers[0]];
-            if (activeFinger) {
-                const touch = this.touchHandler.activeTouches.get(activeFinger.touchId);
-                if (touch) {
-                    this.modeManager.onMove(touch.x, touch.y);
+            let touch = null;
+            if (this.state.activeTouchId != null) {
+                // 再タッチからのモード
+                touch = this.touchHandler.activeTouches.get(this.state.activeTouchId);
+            } else if (this.state.initialFingers && this.state.activeGesture) {
+                // 4本指からのモード
+                const activeFinger = this.state.initialFingers[this.state.activeGesture.fingers[0]];
+                if (activeFinger) {
+                    touch = this.touchHandler.activeTouches.get(activeFinger.touchId);
                 }
+            }
+            if (touch) {
+                this.modeManager.onMove(touch.x, touch.y);
             }
         } else if (this.state.phase === 'four_finger_detected' || this.state.phase === 'gesture_active') {
             this.detectGesture();
@@ -97,12 +121,23 @@ class Variation1iPad {
         this.updateDisplay();
         
         if (this.touchHandler.size === 0) {
-            if (this.state.activeGesture) {
-                this.debug(`モード終了: ${this.state.activeGesture.description}`);
+            if (this.state.phase === 'mode_active') {
+                // モードを記憶して待機
+                this.modeManager.lastPosition = null;
+                this.state.phase = 'mode_remembered';
+                this.state.activeTouchId = null;
+                this.ui.showModeRemembered(this.modeManager.activeMode);
+                this.debug(`モード記憶: ${this.modeManager.activeMode.name}`);
+            } else if (this.state.phase === 'mode_remembered') {
+                // モード記憶中は何もしない
+            } else {
+                if (this.state.activeGesture) {
+                    this.debug(`ジェスチャ完了: ${this.state.activeGesture.description}`);
+                }
+                this.modeManager.deactivate();
+                this.state = { phase: 'waiting', initialFingers: null, activeGesture: null };
+                this.ui.showWaitingAfterRelease();
             }
-            this.modeManager.deactivate();
-            this.state = { phase: 'waiting', initialFingers: null, activeGesture: null };
-            this.ui.showWaitingAfterRelease();
         } else if (this.state.phase === 'four_finger_detected' || this.state.phase === 'gesture_active') {
             this.detectGesture();
         }
