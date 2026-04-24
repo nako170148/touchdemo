@@ -5,4 +5,4 @@
 python3 -m http.server 3000
 ```
 Mac: http://localhost:3000
-iPad: http://172.16.0.30:3000
+iPad: その時に応じて

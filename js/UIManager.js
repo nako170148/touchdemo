@@ -1,6 +1,5 @@
 /**
  * UI状態管理
- * DOM要素の表示切替・テキスト更新を担当
  */
 export class UIManager {
     constructor() {
@@ -14,7 +13,7 @@ export class UIManager {
         this.controlsPanel = document.getElementById('controlsPanel');
     }
 
-    /** 手の選択後、待機画面に切り替える */
+    //待機画面に切り替え
     showWaiting(hand) {
         this.handSelection.style.display = 'none';
         this.statusPanel.style.display = 'flex';
@@ -27,14 +26,14 @@ export class UIManager {
         this.modeEl.textContent = '待機中';
     }
 
-    /** 4本指検出時の表示 */
+    //4本指検出!!
     showFourFingerDetected() {
         this.instruction.textContent = '4本指を検出しました！特定の指を離してください';
         this.instruction.className = 'instruction detected';
         this.modeEl.textContent = '4本指検出';
     }
 
-    /** ジェスチャ検出時の表示 */
+    //ジェスチャ検出の表示
     showGesture(gesture) {
         this.instruction.textContent = `${gesture.id}: ${gesture.description}`;
         this.instruction.className = 'instruction gesture';
@@ -47,7 +46,7 @@ export class UIManager {
         `;
     }
 
-    /** モードがアクティブになった時の表示 */
+
     showModeActive(mode) {
         this.instruction.textContent = `${mode.name}`;
         this.instruction.className = 'instruction mode-active';
@@ -60,7 +59,7 @@ export class UIManager {
         `;
     }
 
-    /** すべての指が離れた後、待機状態に戻す */
+
     showWaitingAfterRelease() {
         this.instruction.textContent = '4本指（人差し指、中指、薬指、小指）を同時にタッチしてください';
         this.instruction.className = 'instruction';
@@ -68,12 +67,12 @@ export class UIManager {
         this.gestureInfoEl.innerHTML = '<div class="gesture-id">-</div>';
     }
 
-    /** タッチ数を更新する */
+    //タッチ数の更新
     updateTouchCount(count) {
         this.touchCountEl.textContent = count;
     }
 
-    /** リセット：手の選択画面に戻す */
+    //リセット
     showHandSelection() {
         this.handSelection.style.display = 'flex';
         this.statusPanel.style.display = 'none';

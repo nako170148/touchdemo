@@ -10,9 +10,9 @@ export class ModeManager {
         this.scrollOffset = { x: 0, y: 0 };
 
         this.MODES = {
-            0: { id: 'marker',  name: 'マーカーモード',       color: '#e91e63' },
+            0: { id: 'marker',  name: '描画モード',       color: '#e91e63' },
             1: { id: 'eraser',  name: '消しゴムモード',       color: '#9e9e9e' },
-            2: { id: 'cursor',  name: 'ポインティングモード', color: '#2196f3' },
+            2: { id: 'cursor',  name: 'カーソルモード', color: '#2196f3' },
             3: { id: 'scroll',  name: 'スクロールモード',     color: '#ff9800' }
         };
 
