@@ -35,17 +35,28 @@ export class UIManager {
 
     //ジェスチャ検出の表示
     showGesture(gesture) {
-        this.instruction.textContent = `${gesture.id}: ${gesture.description}`;
+        this.instruction.textContent = gesture.description;
         this.instruction.className = 'instruction gesture';
         this.modeEl.textContent = 'ジェスチャ検出';
 
         this.gestureInfoEl.innerHTML = `
-            <div class="gesture-id">${gesture.id}</div>
-            <div class="gesture-desc">${gesture.description}</div>
+            <div class="gesture-id">${gesture.description}</div>
             <div class="gesture-desc">使用する指: ${gesture.fingerNames.join(', ')}</div>
         `;
     }
 
+
+    showModeRemembered(mode) {
+        this.instruction.textContent = `${mode.name}（1本指で再開 / 3本指で終了）`;
+        this.instruction.className = 'instruction mode-active';
+        this.instruction.style.borderColor = mode.color;
+        this.modeEl.textContent = `${mode.name}（待機）`;
+
+        this.gestureInfoEl.innerHTML = `
+            <div class="gesture-id" style="color: ${mode.color}">${mode.name}</div>
+            <div class="gesture-desc">1本指タッチで再開 / 3本指タッチで終了</div>
+        `;
+    }
 
     showModeActive(mode) {
         this.instruction.textContent = `${mode.name}`;

@@ -6,7 +6,12 @@ export class GestureClassifier {
         this.FINGER_NAMES = fingerNames;
     }
 
-    // 4本指を検出し、x座標と手の種類で指を識別する
+    /**
+     * 4本指を検出し、x座標と手の種類で指を識別する
+     * @param {Map} activeTouches - アクティブなタッチのMap
+     * @param {string} handType - 'left' or 'right'
+     * @returns {Array} 識別された指の配列
+     */
     detectFourFingers(activeTouches, handType) {
         const touches = Array.from(activeTouches.values());
 

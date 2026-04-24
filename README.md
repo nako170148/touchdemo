@@ -6,3 +6,8 @@ python3 -m http.server 3000
 ```
 Mac: http://localhost:3000
 iPad: その時に応じて
+
+```bash
+ipconfig getifaddr en0
+```
+でIPアドレスを確認し、iPadからアクセスする
